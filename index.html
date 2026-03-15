@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Water Monitoring & Dosing Dashboard</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+</head>
+<body>
+
+<nav class="navbar">
+<div class="logo">💧 Automatic Water Monitoring & Dosing System</div>
+
+<div class="right-nav">
+<button id="themeToggle">🌐 Language</button>
+<button id="modeToggle">🌗 Toggle Mode</button>
+</div>
+</nav>
+
+<h1 id="clp">Welcome to the Water Monitoring Dashboard</h1>
+
+<div class="container">
+
+<div class="cards">
+
+<div class="card">
+<h3>Water Tank Level</h3>
+<canvas id="levelGauge" width="120" height="120"></canvas>
+<p id="levelValue">--%</p>
+</div>
+
+<div class="card">
+<h3>Turbidity</h3>
+<canvas id="turbidityGauge" width="120" height="120"></canvas>
+<p id="turbidityValue">-- NTU</p>
+</div>
+
+<div class="card">
+<h3>pH Level</h3>
+<canvas id="phGauge" width="120" height="120"></canvas>
+<p id="phValue">--</p>
+</div>
+
+<div class="card">
+<h3>Manual Dosing</h3>
+<p>Status: <span id="doseStatus" class="status-text off">OFF</span></p>
+<button id="toggleDose">Toggle Dosing</button>
+</div>
+
+</div>
+
+<!-- Chart -->
+<div class="card full">
+<h3>Sensor Data Graph</h3>
+<canvas id="sensorChart"></canvas>
+</div>
+
+<div class="card full">
+<h3>System Alerts</h3>
+<ul id="alertsList">
+<li>✅ Dashboard initialized successfully.</li>
+</ul>
+</div>
+
+<footer>
+<p>Last Updated: <span id="lastUpdated">--</span></p>
+<p>&copy; 2025 Automatic Water Monitoring and Dosing System</p>
+<p>Developed by <a href="https://www.linkedin.com/in/arpit-verma-687b3b332/" target="_blank">Arpit Verma</a></p>
+</footer>
+
+</div>
+
+<script src="script.js" defer></script>
+
+</body>
+</html>
