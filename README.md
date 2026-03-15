@@ -57,7 +57,7 @@ Data can be connected through:
 
 ![Dashboard Preview](assets/preview.png)
 
-(assets/preview1.png)
+![Dashboard Preview](assets/preview1.png)
 
 ---
 
