@@ -48,13 +48,82 @@ const sensorChart = new Chart(chartCtx, {
   }
 });
 
+async function updateDataFromBackend(){
+  try{
+    const response=await fetch('/api/live-status');
+    const Serverdata= await response.json();
+
+    console.log("Data Received from server:",Serverdata);
+    
+    const level=Number(Serverdata.waterLevel)|| 0;
+    const tds=Number(Serverdata.tds) || 0;
+    const floatSwitch=Serverdata.floatSwitch ||"UNKNOWN";
+
+
+    if(document.getElementById("levelValue")) document.getElementById("levelValue").textContent = `${level}%`;
+    if(document.getElementById("turbidityValue")) document.getElementById("turbidityValue").textContent = `${tds} ppm`;
+if (document.getElementById("phValue")) {
+    document.getElementById("phValue").textContent = "Working on Feature...";
+    document.getElementById("phValue").style.fontSize = "14px"; // Font size thoda chota taaki text fit ho jaye
+    document.getElementById("phValue").style.color = "#ff3b30";
+    document.getElementById("phValue").style.fontSize = "bold"; // Warning/Working red/orange color
+}
+
+
+    //Drawing Dynamic Real-Time Gauges
+    drawGauge("levelGauge", level, 100, "#0077ff");
+    drawGauge("turbidityGauge", tds, 1000, "#22c55e");
+    drawGauge("phGauge", 0, 14, "#ff3b30");
+
+   const now = new Date().toLocaleTimeString();
+    sensorChart.data.labels.push(now);
+    sensorChart.data.datasets[0].data.push(level); // Chart Index 0: Water Level
+    sensorChart.data.datasets[1].data.push(tds);   // Chart Index 1: TDS
+
+    // Maintain 10 records on screen
+    if (sensorChart.data.labels.length > 10) {
+      sensorChart.data.labels.shift();
+      sensorChart.data.datasets.forEach(d => d.data.shift());
+    }
+    sensorChart.update();
+
+    if(document.getElementById("lastUpdated")) document.getElementById("lastUpdated").textContent = now;
+
+    //  Automation Alerts Management Logic
+    const alertsList = document.getElementById("alertsList");
+    if(alertsList) {
+      alertsList.innerHTML = "";
+
+      if (tds > 600) {
+        alertsList.innerHTML += `<li>⚠️ High TDS Detected (Contaminated Water)</li>`;
+      }
+      if (floatSwitch === "HIGH") {
+        alertsList.innerHTML += `<li>⚠️ Critical: Float Switch High Alert</li>`;
+      }
+      if (alertsList.innerHTML === "") {
+        alertsList.innerHTML = `<li>No active alerts</li>`;
+      }
+    }
+
+  } catch (error) {
+    console.error("Backend integration failed bhai:", error);
+  }
+}
+
+// Interval loop directly hitting the server every 2 seconds
+setInterval(updateDataFromBackend, 2000);
+
+// ========================================================
+// DASHBOARD TO HARDWARE REVERSE CONTROL TRIGGER (Dosing Pump Button)
+// ========================================================
 const doseBtn = document.getElementById("toggleDose");
 const doseStatus = document.getElementById("doseStatus");
 let dosing = false;
 
-doseBtn.addEventListener("click", () => {
+doseBtn.addEventListener("click", async () => {
   dosing = !dosing;
 
+  // Toggle visual states
   if (dosing) {
     doseStatus.textContent = "ON";
     doseStatus.classList.remove("off");
@@ -64,53 +133,65 @@ doseBtn.addEventListener("click", () => {
     doseStatus.classList.remove("on");
     doseStatus.classList.add("off");
   }
+
+  // TODO: Aage ke part mein hum yahan POST Request lagayenge jo server 
+  // ko batayega ki button daba diya hai aur ESP32 ko notification jaye.
+  console.log(`Dosing pump trigger state set to: ${dosing}`);
+
+try {
+    const response = await fetch('/api/toggle-dosing', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ status: dosing }) // Server expects { status: true/false }
+    });
+    const result = await response.json();
+    console.log("Server Response for Dosing:", result);
+  } catch (error) {
+    console.error("Failed to send dosing command to server:", error);
+  }
+
+
+
 });
 
-function updateData() {
+const drainBtn = document.getElementById("toggleDrain");
+const drainStatus = document.getElementById("drainStatus");
+let draining = false;
 
-  const level = Math.floor(Math.random() * 100);
-  const turbidity = Number((Math.random() * 5 + 1).toFixed(2));
-  const ph = Number((Math.random() * 3 + 6).toFixed(2));
+drainBtn.addEventListener("click", async () => {
+  draining = !draining;
 
-  document.getElementById("levelValue").textContent = `${level}%`;
-  document.getElementById("turbidityValue").textContent = `${turbidity} NTU`;
-  document.getElementById("phValue").textContent = ph;
-
-  drawGauge("levelGauge", level, 100, "#0077ff");
-  drawGauge("turbidityGauge", turbidity, 10, "#22c55e");
-  drawGauge("phGauge", ph, 14, "#ff3b30");
-
-  const now = new Date().toLocaleTimeString();
-
-  sensorChart.data.labels.push(now);
-  sensorChart.data.datasets[0].data.push(level);
-  sensorChart.data.datasets[1].data.push(turbidity);
-  sensorChart.data.datasets[2].data.push(ph);
-
-  if (sensorChart.data.labels.length > 10) {
-    sensorChart.data.labels.shift();
-    sensorChart.data.datasets.forEach(d => d.data.shift());
+  // Toggle visual states
+  if (draining) {
+    drainStatus.textContent = "ON";
+    drainStatus.classList.remove("off");
+    drainStatus.classList.add("on");
+  } else {
+    drainStatus.textContent = "OFF";
+    drainStatus.classList.remove("on");
+    drainStatus.classList.add("off");
   }
 
-  sensorChart.update();
-
-  document.getElementById("lastUpdated").textContent = now;
-
-  const alertsList = document.getElementById("alertsList");
-  alertsList.innerHTML = "";
-
-  if (ph < 6.5 || ph > 8.5) {
-    alertsList.innerHTML += `<li>⚠️ pH out of range</li>`;
+  // TODO: Aage ke part mein hum yahan POST Request lagayenge jo server 
+  // ko batayega ki button daba diya hai aur ESP32 ko notification jaye.
+  console.log(`Draining pump trigger state set to: ${draining}`);
+try {
+    const response = await fetch('/api/toggle-drain', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ status: draining }) // Server expects { status: true/false }
+    });
+    const result = await response.json();
+    console.log("Server Response for Drain:", result);
+  } catch (error) {
+    console.error("Failed to send drain command to server:", error);
   }
 
-  if (turbidity > 4) {
-    alertsList.innerHTML += `<li>⚠️ High turbidity detected</li>`;
-  }
 
-  if (alertsList.innerHTML === "") {
-    alertsList.innerHTML = `<li>No active alerts</li>`;
-  }
 
-}
 
-setInterval(updateData, 3000);
+});
