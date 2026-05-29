@@ -1,23 +1,32 @@
 const { log } = require('console');
 const express = require('express');
+const mongoose = require('mongoose');
 const app = express();
 const path = require('path');
+const WaterData = require('./models/WaterData'); // Model Name locked
 const PORT = 5000;
 
 // Global Control Status Variables
 let currentDosingStatus = false; 
 let currentDrainStatus = false;
+let systemMode = "MANUAL";
 
 // Middleware Setup
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(__dirname));
 
+// MongoDB Atlas Cloud Connection
+mongoose.connect('mongodb+srv://arpit_admin:arpit_bhai@user.f2fceom.mongodb.net/waterAutomationDB?retryWrites=true&w=majority&appName=User')
+.then(() => console.log("☁️ MongoDB Atlas is successfully connected by Arpit!"))
+.catch((err) => { console.error("❌ MongoDB error detected: ", err); });
+
 // Live Telemetry Data Store
 let liveWaterData = {
     tds: 0,
     waterLevel: 0,
-    floatSwitch: 'UNKNOWN'
+    floatSwitch: 'UNKNOWN',
+    mode: 'MANUAL'
 };
 
 // 1. Home Route to serve Dashboard HTML
@@ -25,49 +34,96 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// 2. ESP32 Telemetry Receiver Route (FIXED: Single Response Loop)
-app.post('/api/update-sensor', (req, res) => {
-    const { tds, waterLevel, floatSwitch } = req.body;
+// 2. ESP32 Telemetry Receiver Route (FIXED: async added & model name fixed)
+app.post('/api/update-sensor', async (req, res) => {
+    try {
+        const { tds, waterLevel, floatSwitch } = req.body;
 
-    // Save current states
-    liveWaterData = { tds, waterLevel, floatSwitch };
+        // Save current states to RAM object
+        liveWaterData = { tds, waterLevel, floatSwitch, mode: systemMode };
+        
+        // Permanent Save to Cloud (Using the correct WaterData Model)
+        const logData = new WaterData({
+            tds: Number(tds),
+            waterLevel: Number(waterLevel),
+            floatSwitch: floatSwitch
+        });
+        await logData.save();
 
-    console.log("\n=============================================");
-    console.log("📥 Live data received by Arpit from ESP32:", liveWaterData);
-    console.log(`🧪 Dosing Pump Sync State: ${currentDosingStatus}`);
-    console.log(`🚰 Drain Pump Sync State: ${currentDrainStatus}`);
-    console.log("=============================================");
+        console.log("💾 Data Logged to MongoDB Atlas Successfully!");
 
-    // SINGLE CLEAN RESPONSE ESP32 parse
-    res.json({
-        success: true,
-        message: "Data received successfully by Arpit",
-        dosingPump: currentDosingStatus, 
-        drainPump: currentDrainStatus
-    });
+        console.log("\n=============================================");
+        console.log("📥 Live data received by Arpit from ESP32:", liveWaterData);
+        console.log(`🧪 Dosing Pump Sync State: ${currentDosingStatus}`);
+        console.log(`🚰 Drain Pump Sync State: ${currentDrainStatus}`);
+        console.log("=============================================");
+
+        // Automation & Safety Logic
+        if (floatSwitch === "ALERT") {
+            currentDosingStatus = false;
+            currentDrainStatus = false;
+            console.log("🚨 EMERGENCY: Float Switch High! Stopping All Pumps.");
+        } 
+        else if (systemMode === "AUTOMATIC") {
+            if (tds > 600 || waterLevel < 50) {
+                currentDosingStatus = true;
+            } else {
+                currentDosingStatus = false;
+            }
+
+            if (waterLevel >= 95) {
+                currentDrainStatus = true;
+            } else {
+                currentDrainStatus = false;
+            }
+        }
+        
+        // SINGLE CLEAN RESPONSE
+        res.json({
+            success: true,
+            message: "Data received successfully by Arpit",
+            dosingPump: currentDosingStatus, 
+            drainPump: currentDrainStatus
+        });
+
+    } catch (err) {
+        console.error("❌ Error processing or saving data:", err); // Fixed reference to err
+        res.status(500).json({ success: false, message: "Server Database Error" });
+    }
 });
 
-// 3. Frontend Live Status Long Polling/Fetch Endpoint
+// 3. Frontend Live Status Fetch Endpoint
 app.get('/api/live-status', (req, res) => {
     res.json(liveWaterData);
 });
 
+app.post('/api/toggle-mode', (req, res) => {
+    const { mode } = req.body; 
+    systemMode = mode;
+    console.log(`\n🔄 System Mode Changed to -> ${systemMode}`);
+    res.json({ success: true, mode: systemMode });
+});
+
 // 4. Dashboard Manual Toggle Route for Dosing Pump
 app.post('/api/toggle-dosing', (req, res) => {
-    const { status } = req.body; // Front-end JSON payload: { "status": true/false }
-    currentDosingStatus = status;
-    
-    console.log(`\n🎛️ Dashboard Manual Event: Dosing Pump changed to -> ${currentDosingStatus}`);
-    res.json({ success: true, dosingPump: currentDosingStatus });
+    const { status } = req.body; 
+    if (systemMode === "MANUAL") {
+        currentDosingStatus = status;
+        res.json({ success: true, dosingPump: currentDosingStatus });
+    } else {
+        res.json({ success: false, message: "Switch to MANUAL mode first!" });
+    }
 });
 
 // 5. Dashboard Manual Toggle Route for Drainage Pump
 app.post('/api/toggle-drain', (req, res) => {
-    const { status } = req.body; // Front-end JSON payload: { "status": true/false }
-    currentDrainStatus = status;
-
-    console.log(`\n🎛️ Dashboard Manual Event: Drain Pump changed to -> ${currentDrainStatus}`);
-    res.json({ success: true, drainPump: currentDrainStatus });
+    const { status } = req.body; 
+    if (systemMode === "MANUAL") {
+        currentDrainStatus = status;
+        res.json({ success: true, drainPump: currentDrainStatus });
+    } else {
+        res.json({ success: false, message: "Switch to MANUAL mode first!" });
+    }
 });
 
 // Start Automation Server

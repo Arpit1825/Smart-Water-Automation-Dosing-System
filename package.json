@@ -19,6 +19,7 @@
   },
   "homepage": "https://github.com/Arpit1825/Smart-Water-Automation-Dosing-System#readme",
   "dependencies": {
-    "express": "^5.2.1"
+    "express": "^5.2.1",
+    "mongoose": "^9.6.3"
   }
 }
