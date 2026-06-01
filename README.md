@@ -31,6 +31,10 @@ This dashboard is part of the **Automatic Water Monitoring & Chemical Dosing Sys
 * HTML5
 * CSS3
 * JavaScript
+* React.js
+* Node.js
+* Express.js
+* Mongo DB
 * Chart.js
 
 ---
