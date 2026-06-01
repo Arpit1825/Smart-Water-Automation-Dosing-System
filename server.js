@@ -12,6 +12,8 @@ let currentDrainStatus = false;
 let systemMode = "MANUAL";
 
 // Middleware Setup
+const cors = require('cors');
+app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(__dirname));
@@ -96,30 +98,43 @@ app.post('/api/update-sensor', async (req, res) => {
 app.get('/api/live-status', (req, res) => {
     res.json(liveWaterData);
 });
-
 app.post('/api/toggle-mode', (req, res) => {
     const { mode } = req.body; 
     systemMode = mode;
+    
+    if (systemMode === "AUTOMATIC") {
+        currentDosingStatus = false;
+        currentDrainStatus = false;
+    }
+    
+    liveWaterData.mode = systemMode;
+    liveWaterData.dosingPump = currentDosingStatus;
+    liveWaterData.drainPump = currentDrainStatus;
+    
     console.log(`\n🔄 System Mode Changed to -> ${systemMode}`);
-    res.json({ success: true, mode: systemMode });
+    res.json({ success: true, mode: systemMode, dosingPump: currentDosingStatus, drainPump: currentDrainStatus });
 });
 
-// 4. Dashboard Manual Toggle Route for Dosing Pump
+// 🧪 Dashboard Manual Toggle for Dosing Pump
 app.post('/api/toggle-dosing', (req, res) => {
     const { status } = req.body; 
     if (systemMode === "MANUAL") {
         currentDosingStatus = status;
+        liveWaterData.dosingPump = currentDosingStatus;
+        console.log(`🧪 Manual Dosing Pump: ${currentDosingStatus ? "ON" : "OFF"}`);
         res.json({ success: true, dosingPump: currentDosingStatus });
     } else {
         res.json({ success: false, message: "Switch to MANUAL mode first!" });
     }
 });
 
-// 5. Dashboard Manual Toggle Route for Drainage Pump
+// 🚰 Dashboard Manual Toggle for Drainage Pump
 app.post('/api/toggle-drain', (req, res) => {
     const { status } = req.body; 
     if (systemMode === "MANUAL") {
         currentDrainStatus = status;
+        liveWaterData.drainPump = currentDrainStatus;
+        console.log(`🚰 Manual Drain Pump: ${currentDrainStatus ? "ON" : "OFF"}`);
         res.json({ success: true, drainPump: currentDrainStatus });
     } else {
         res.json({ success: false, message: "Switch to MANUAL mode first!" });
