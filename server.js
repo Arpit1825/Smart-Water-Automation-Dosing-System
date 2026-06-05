@@ -19,7 +19,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static(__dirname));
 
 // MongoDB Atlas Cloud Connection
-mongoose.connect('mongodb+srv://USERNAME:USER_PASSWORD@user.f2fceom.mongodb.net/waterAutomationDB?retryWrites=true&w=majority&appName=User')
+mongoose.connect('mongodb+srv://arpit_admin:arpit_bhai@user.f2fceom.mongodb.net/waterAutomationDB?retryWrites=true&w=majority&appName=User')
 .then(() => console.log("☁️ MongoDB Atlas is successfully connected by Arpit!"))
 .catch((err) => { console.error("❌ MongoDB error detected: ", err); });
 
