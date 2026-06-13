@@ -1,11 +1,11 @@
+require('dotenv').config();
 const { log } = require('console');
 const express = require('express');
 const mongoose = require('mongoose');
 const app = express();
 const path = require('path');
 const WaterData = require('./models/WaterData'); // Model Name locked
-const PORT = 5000;
-
+const PORT=process.env.PORT || 3000;
 // Global Control Status Variables
 let currentDosingStatus = false; 
 let currentDrainStatus = false;
@@ -19,7 +19,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static(__dirname));
 
 // MongoDB Atlas Cloud Connection
-mongoose.connect('mongodb+srv://arpit_admin:arpit_bhai@user.f2fceom.mongodb.net/waterAutomationDB?retryWrites=true&w=majority&appName=User')
+mongoose.connect(process.env.MONGODB_URI)
 .then(() => console.log("☁️ MongoDB Atlas is successfully connected by Arpit!"))
 .catch((err) => { console.error("❌ MongoDB error detected: ", err); });
 
