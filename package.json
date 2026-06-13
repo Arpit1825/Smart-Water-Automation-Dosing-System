@@ -4,6 +4,7 @@
   "description": "A smart IoT dashboard designed to monitor and control water quality parameters such as **water level, turbidity, and pH** in real-time.",
   "main": "script.js",
   "scripts": {
+    "dev":"node server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
