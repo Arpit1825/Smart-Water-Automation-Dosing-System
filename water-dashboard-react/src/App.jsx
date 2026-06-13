@@ -19,7 +19,7 @@ function App() {
   const [alerts, setAlerts] = useState([]);
   const [lastAlertState, setLastAlertState] = useState({ tdsCritical: false, levelCritical: false });
 
-const API_BASE_URL = "https://smart-water-automation-dosing-system.onrender.com/api";
+const API_BASE_URL = import.meta.env.VITE_API_URL;
 
   const triggerAlert = (type, text) => {
     const time = new Date().toLocaleTimeString();
