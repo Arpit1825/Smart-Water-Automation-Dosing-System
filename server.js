@@ -13,7 +13,9 @@ let systemMode = "MANUAL";
 
 // Middleware Setup
 const cors = require('cors');
-app.use(cors());
+app.use(cors({
+  origin: "https://smart-water-automation-dosing-syste.vercel.app"
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(__dirname));
