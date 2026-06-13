@@ -2,11 +2,13 @@
   "name": "watertankautomationdashboard",
   "version": "1.0.0",
   "description": "A smart IoT dashboard designed to monitor and control water quality parameters such as **water level, turbidity, and pH** in real-time.",
-  "main": "script.js",
-  "scripts": {
-    "dev":"node server.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
+  "main": "server.js",
+
+"scripts": {
+  "start": "node server.js",
+  "dev": "node server.js",
+  "test": "echo \"Error: no test specified\" && exit 1"
+},
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Arpit1825/Smart-Water-Automation-Dosing-System.git"
