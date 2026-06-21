@@ -3,6 +3,7 @@ const { log } = require('console');
 const express = require('express');
 const mongoose = require('mongoose');
 const app = express();
+const SERVER_HOST = "0.0.0.0";
 const path = require('path');
 const WaterData = require('./models/WaterData'); // Model Name locked
 const PORT=process.env.PORT || 3000;
@@ -10,12 +11,30 @@ const PORT=process.env.PORT || 3000;
 let currentDosingStatus = false; 
 let currentDrainStatus = false;
 let systemMode = "MANUAL";
-
+const allowedOrigins = [
+    "https://smart-water-automation-dosing-syste.vercel.app", // Production Vercel Link
+    "http://localhost:5173",                                   // Vite Default Local Dev
+    "http://127.0.0.1:5173",                                   // Vite Alternate Local Dev
+    "http://localhost:3000",                                   // Server Local Home Test
+    "http://127.0.0.1:5500"                                    // Live Server Default (if used)
+];
 // Middleware Setup
 const cors = require('cors');
 app.use(cors({
-  origin: "https://smart-water-automation-dosing-syste.vercel.app"
+    origin: function (origin, callback) {
+        // Allow requests with no origin (like mobile apps, ESP32 HTTP client calls)
+        if (!origin) return callback(null, true);
+        
+        if (allowedOrigins.indexOf(origin) !== -1) {
+            callback(null, true);
+        } else {
+            console.log(`⚠️ Blocked by CORS Configuration Node: ${origin}`);
+            callback(new Error('Not allowed by CORS Architecture'));
+        }
+    },
+    credentials: true
 }));
+app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(__dirname));
@@ -144,8 +163,9 @@ app.post('/api/toggle-drain', (req, res) => {
 });
 
 // Start Automation Server
-app.listen(PORT, function () {
+app.listen(PORT, SERVER_HOST, function () {
     console.log(`---------------------------------------------`);
-    console.log(`Automation server is working on PORT:${PORT}`);
+    console.log(`🚀 Automation server globally active by Arpit!`);
+    console.log(`📡 URL Network: http://YOUR_LAPTOP_IP:${PORT}`);
     console.log(`---------------------------------------------`);
 });

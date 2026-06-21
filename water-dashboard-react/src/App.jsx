@@ -21,6 +21,8 @@ function App() {
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 
+console.log("API_BASE_URL =", API_BASE_URL);
+
   const triggerAlert = (type, text) => {
     const time = new Date().toLocaleTimeString();
     setAlerts(prev => [{ time, type, text }, ...prev.slice(0, 3)]);
